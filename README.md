@@ -1,11 +1,51 @@
-<div align="center">
+# SonarCloud 🌙
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Um reprodutor de paisagens sonoras (soundscape player) elegante e minimalista, projetado para ajudar você a relaxar, focar ou dormir. Utiliza o SoundCloud para fornecer uma vasta biblioteca de sons ambientes de alta qualidade.
 
-  <h1>Built with AI Studio</h2>
+## Sobre o Projeto
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+O SonarCloud foi criado para ser uma ferramenta simples e eficaz para quem busca sons de fundo para melhorar o ambiente, seja para trabalhar, estudar ou para ter uma noite de sono tranquila. A interface é limpa, intuitiva e altamente personalizável para se adaptar às suas preferências.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## Principais Funcionalidades
 
-</div>
+- **🎵 Biblioteca de Sons Curada:** Uma seleção de sons organizados por categorias como Chuva, Oceano, Natureza, Lareira, Piano, Lofi e mais.
+- **⏱️ Timer com Fade Out:** Defina um timer para que a música pare de tocar suavemente após um determinado período, ideal para adormecer.
+- **🎨 Temas Personalizáveis:** Escolha entre os temas Claro, Escuro e Translúcido (que usa uma imagem de fundo aleatória) para uma experiência visual agradável.
+- **⚙️ Layout Flexível:** Alterne entre o modo "Container" (com o player no topo) e o modo "Fixo" (com um player persistente na parte inferior da tela).
+- **🔗 Adicione Suas Próprias Faixas:** Cole qualquer link de uma faixa do SoundCloud para ouvi-la diretamente na aplicação.
+- **🎚️ Controle de Volume:** Ajuste o volume facilmente através de um slider.
+- **📱 Responsivo:** Totalmente funcional em desktops, tablets e dispositivos móveis.
+
+## Tecnologias Utilizadas
+
+- **React:** Biblioteca principal para a construção da interface de usuário.
+- **TypeScript:** Para um código mais robusto e seguro.
+- **Vite:** Ferramenta de build extremamente rápida para o desenvolvimento frontend.
+- **Tailwind CSS:** Framework CSS para estilização rápida e responsiva.
+- **SoundCloud Widget API:** Para incorporar e controlar o player de áudio.
+
+## Como Executar Localmente
+
+Siga os passos abaixo para rodar o projeto em sua máquina.
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/seu-usuario/sonarcloud.git
+    cd sonarcloud
+    ```
+
+2.  **Instale as dependências:**
+    ```bash
+    npm install
+    ```
+
+3.  **Inicie o servidor de desenvolvimento:**
+    ```bash
+    npm run dev
+    ```
+
+4.  Abra seu navegador e acesse `http://localhost:5173` (ou a porta que o Vite indicar).
+
+## Desenvolvido Por
+
+Este projeto foi desenvolvido com dedicação por **[@elias_jrnunes](https://instagram.com/elias_jrnunes)**.
