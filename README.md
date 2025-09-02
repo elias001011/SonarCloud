@@ -49,4 +49,4 @@ Siga os passos abaixo para rodar o projeto em sua máquina.
 ## Desenvolvido Por
 
 Este projeto foi desenvolvido por **[@elias_jrnunes](https://instagram.com/elias_jrnunes)**.
-Atenção: ùltima versão do projeto foi impulsionado por IA para melhor interface, espere bugs por conta disso.
+- Atenção: ùltima versão do projeto foi impulsionado por IA para melhor interface, espere bugs por conta disso.
