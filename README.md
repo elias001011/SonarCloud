@@ -30,7 +30,7 @@ Siga os passos abaixo para rodar o projeto em sua máquina.
 
 1.  **Clone o repositório:**
     ```bash
-    git clone https://github.com/elias001011/SonarCloud.git
+    git clone https://github.com/seu-usuario/sonarcloud.git
     cd sonarcloud
     ```
 
@@ -48,5 +48,4 @@ Siga os passos abaixo para rodar o projeto em sua máquina.
 
 ## Desenvolvido Por
 
-Este projeto foi desenvolvido por **[@elias_jrnunes](https://instagram.com/elias_jrnunes)**.
-- Atenção: ùltima versão do projeto foi impulsionado por IA para melhor interface, espere bugs por conta disso.
+Este projeto foi desenvolvido com dedicação por **[@elias_jrnunes](https://instagram.com/elias_jrnunes)**.

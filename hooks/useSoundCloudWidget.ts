@@ -121,9 +121,14 @@ export const useSoundCloudWidget = (iframeId: string, events: WidgetEvents) => {
       fadeIntervalRef.current = setInterval(() => {
         currentVolume -= stepVolume;
         if (currentVolume <= 0) {
+          if (fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
           widget.pause();
-          widget.setVolume(initialVolume);
-          if(fadeIntervalRef.current) clearInterval(fadeIntervalRef.current);
+          setTimeout(() => {
+            // Re-check ref in case component unmounted during the timeout
+            if (widgetRef.current) {
+              widgetRef.current.setVolume(initialVolume);
+            }
+          }, 300);
         } else {
           widget.setVolume(Math.max(0, currentVolume));
         }
