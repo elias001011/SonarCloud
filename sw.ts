@@ -1,8 +1,10 @@
 /// <reference lib="WebWorker" />
 
-// FIX: A redundant declaration of `self` can cause type conflicts.
-// The `/// <reference lib="WebWorker" />` directive is sufficient to correctly
-// type the service worker global scope, including `self.skipWaiting()`.
+// Fix: Explicitly declare the type of `self` to `ServiceWorkerGlobalScope`.
+// This resolves the TypeScript error where `self` was incorrectly inferred as
+// `Window`, which does not have the `skipWaiting` method.
+declare const self: ServiceWorkerGlobalScope;
+
 const CACHE_NAME = 'sonarcloud-cache-v1';
 const URLS_TO_CACHE = [
   '/',
@@ -13,8 +15,6 @@ const URLS_TO_CACHE = [
   '/types.ts',
   '/manifest.webmanifest',
   '/public/icon.svg',
-  '/public/icon-192x192.png',
-  '/public/icon-512x512.png',
   'https://w.soundcloud.com/player/api.js'
 ];
 
