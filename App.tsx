@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Sound, Theme, FadeOutOption } from './types';
 import { SOUND_CATEGORIES, DEFAULT_SOUND } from './constants';
 import { useSoundCloudWidget } from './hooks/useSoundCloudWidget';
@@ -6,6 +6,11 @@ import Header from './components/Header';
 import SoundGrid from './components/SoundGrid';
 import SettingsModal from './components/SettingsModal';
 import { VolumeControl } from './components/VolumeControl';
+
+// Add WakeLockSentinel type for Screen Wake Lock API
+type WakeLockSentinel = EventTarget & {
+  release: () => Promise<void>;
+};
 
 const App: React.FC = () => {
   // Core State
@@ -19,6 +24,8 @@ const App: React.FC = () => {
   const [theme, setTheme] = useState<Theme>(Theme.Dark);
   const [isAttached, setIsAttached] = useState<boolean>(true); // Container mode default
   const [fadeOutDuration, setFadeOutDuration] = useState<FadeOutOption>(10);
+  const [keepScreenOn, setKeepScreenOn] = useState<boolean>(false);
+  const [isPerformanceMode, setIsPerformanceMode] = useState<boolean>(false);
 
   // Timer State
   const [timerDuration, setTimerDuration] = useState<number>(0);
@@ -26,6 +33,9 @@ const App: React.FC = () => {
   const [isTimerPaused, setIsTimerPaused] = useState<boolean>(true);
   
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>('');
+
+  // Screen Wake Lock
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const activeIframeId = isAttached ? 'sc-widget-iframe-attached' : 'sc-widget-iframe-fixed';
 
@@ -63,6 +73,59 @@ const App: React.FC = () => {
     },
     onPause: () => setIsPlaying(false),
   });
+
+  // --- Screen Wake Lock Logic ---
+  const acquireWakeLock = useCallback(async () => {
+    if ('wakeLock' in navigator && !wakeLockRef.current) {
+      try {
+        wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+        console.log('Screen Wake Lock acquired.');
+        wakeLockRef.current.addEventListener('release', () => {
+          console.log('Screen Wake Lock released by system.');
+          wakeLockRef.current = null;
+        });
+      } catch (err: any) {
+        console.error(`${err.name}, ${err.message}`);
+      }
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    if (wakeLockRef.current) {
+      try {
+        await wakeLockRef.current.release();
+        wakeLockRef.current = null;
+        console.log('Screen Wake Lock released.');
+      } catch (err: any) {
+        console.error(`${err.name}, ${err.message}`);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (keepScreenOn && isPlaying) {
+      acquireWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+    // Cleanup on component unmount
+    return () => {
+      releaseWakeLock();
+    };
+  }, [keepScreenOn, isPlaying, acquireWakeLock, releaseWakeLock]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (wakeLockRef.current !== null && document.visibilityState === 'visible') {
+        acquireWakeLock();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [acquireWakeLock]);
+  // --- End of Wake Lock Logic ---
 
   useEffect(() => {
     if (widget.isReady) {
@@ -142,10 +205,16 @@ const App: React.FC = () => {
   const themeClasses = useMemo(() => {
     if (theme === Theme.Translucent) return 'bg-cover bg-center bg-fixed text-white';
     
+    if (isPerformanceMode) {
+      const bgColor = theme === Theme.Light ? 'bg-white' : 'bg-black';
+      const textColor = theme === Theme.Light ? 'text-slate-900' : 'text-white';
+      return `${bgColor} ${textColor}`;
+    }
+
     const gradient = theme === Theme.Light ? 'from-sky-100 to-blue-200' : 'from-slate-800 to-black';
     const textColor = theme === Theme.Light ? 'text-slate-800' : 'text-white';
     return `bg-gradient-to-br ${gradient} ${textColor}`;
-  }, [theme]);
+  }, [theme, isPerformanceMode]);
   
   const themeStyle = useMemo(() => {
     return theme === Theme.Translucent ? { backgroundImage: `url(${backgroundImageUrl})` } : {};
@@ -156,9 +225,9 @@ const App: React.FC = () => {
   return (
     <main 
       style={themeStyle}
-      className={`relative min-h-screen font-sans transition-all duration-500 ${themeClasses}`}
+      className={`relative min-h-screen font-sans ${!isPerformanceMode ? 'transition-all duration-500' : ''} ${themeClasses}`}
     >
-      <div className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${theme === Theme.Translucent ? 'bg-black/50' : ''}`}></div>
+      <div className={`absolute inset-0 w-full h-full ${!isPerformanceMode ? 'transition-opacity duration-500' : ''} ${theme === Theme.Translucent ? 'bg-black/50' : ''}`}></div>
       <div className="relative z-10 flex flex-col min-h-screen">
         <Header
           theme={theme}
@@ -195,6 +264,7 @@ const App: React.FC = () => {
               currentSoundUrl={currentSound?.url}
               isPlaying={isPlaying}
               loadingSoundUrl={loadingSoundUrl}
+              isPerformanceMode={isPerformanceMode}
             />
           </div>
         ) : (
@@ -207,6 +277,7 @@ const App: React.FC = () => {
                 currentSoundUrl={currentSound?.url}
                 isPlaying={isPlaying}
                 loadingSoundUrl={loadingSoundUrl}
+                isPerformanceMode={isPerformanceMode}
               />
             </div>
             <div className="fixed bottom-0 left-0 right-0 z-30 bg-gray-900/50 backdrop-blur-lg p-3 text-white">
@@ -243,6 +314,10 @@ const App: React.FC = () => {
         fadeOutDuration={fadeOutDuration}
         setFadeOutDuration={setFadeOutDuration}
         onAddCustomSound={handleAddCustomSound}
+        keepScreenOn={keepScreenOn}
+        setKeepScreenOn={setKeepScreenOn}
+        isPerformanceMode={isPerformanceMode}
+        setIsPerformanceMode={setIsPerformanceMode}
       />
     </main>
   );

@@ -10,6 +10,7 @@ interface SoundGridProps {
   isPlaying: boolean;
   isAttached: boolean;
   loadingSoundUrl: string | null;
+  isPerformanceMode: boolean;
 }
 
 const SoundCard: React.FC<{ 
@@ -17,14 +18,15 @@ const SoundCard: React.FC<{
   onSelect: (event: React.MouseEvent) => void; 
   isActive: boolean; 
   isLoading: boolean; 
-  index: number 
-}> = ({ sound, onSelect, isActive, isLoading, index }) => (
+  index: number;
+  isPerformanceMode: boolean;
+}> = ({ sound, onSelect, isActive, isLoading, index, isPerformanceMode }) => (
     <div
         onClick={onSelect}
-        className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 transform hover:scale-105 ${isActive ? 'ring-4 ring-purple-500' : 'ring-2 ring-transparent'}`}
+        className={`relative aspect-square rounded-xl overflow-hidden cursor-pointer group ${!isPerformanceMode ? 'transition-all duration-300 transform hover:scale-105' : ''} ${isActive ? 'ring-4 ring-purple-500' : 'ring-2 ring-transparent'}`}
     >
-        <img src={`https://picsum.photos/300/300?random=${index}`} alt={sound.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"/>
-        <div className="absolute inset-0 bg-black/50 group-hover:bg-black/60 transition-colors duration-300 flex items-end p-3 md:p-4">
+        <img src={`https://picsum.photos/300/300?random=${index}`} alt={sound.name} className={`w-full h-full object-cover ${!isPerformanceMode ? 'transition-transform duration-300 group-hover:scale-110' : ''}`}/>
+        <div className={`absolute inset-0 bg-black/50 ${!isPerformanceMode ? 'group-hover:bg-black/60 transition-colors duration-300' : ''} flex items-end p-3 md:p-4`}>
             <div>
               <h3 className="text-white font-semibold text-sm md:text-base leading-tight">{sound.name}</h3>
               {sound.duration && <p className="text-xs text-white/70 mt-1">{sound.duration}</p>}
@@ -43,7 +45,7 @@ const SoundCard: React.FC<{
     </div>
 );
 
-const SoundGrid: React.FC<SoundGridProps> = ({ categories, onSoundSelect, currentSoundUrl, isPlaying, isAttached, loadingSoundUrl }) => {
+const SoundGrid: React.FC<SoundGridProps> = ({ categories, onSoundSelect, currentSoundUrl, isPlaying, isAttached, loadingSoundUrl, isPerformanceMode }) => {
   let soundIndex = 0;
   return (
     <div className={`flex-grow overflow-y-auto w-full max-w-7xl mx-auto px-8 md:px-12 ${isAttached ? 'pb-16' : 'pb-32'}`}>
@@ -62,6 +64,7 @@ const SoundGrid: React.FC<SoundGridProps> = ({ categories, onSoundSelect, curren
                         isActive={currentSoundUrl === sound.url && isPlaying}
                         isLoading={loadingSoundUrl === sound.url}
                         index={currentIndex}
+                        isPerformanceMode={isPerformanceMode}
                     />
                   );
               })}

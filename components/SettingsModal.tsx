@@ -16,6 +16,12 @@ interface SettingsModalProps {
   setFadeOutDuration: (duration: FadeOutOption) => void;
   // Custom Sound
   onAddCustomSound: (url: string) => void;
+  // Screen Wake Lock
+  keepScreenOn: boolean;
+  setKeepScreenOn: (keepOn: boolean) => void;
+  // Performance
+  isPerformanceMode: boolean;
+  setIsPerformanceMode: (isPerformance: boolean) => void;
 }
 
 const fadeOutOptions: { label: string; value: FadeOutOption }[] = [
@@ -51,7 +57,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   setIsAttached,
   fadeOutDuration,
   setFadeOutDuration,
-  onAddCustomSound
+  onAddCustomSound,
+  keepScreenOn,
+  setKeepScreenOn,
+  isPerformanceMode,
+  setIsPerformanceMode,
 }) => {
   const [customUrl, setCustomUrl] = useState('');
   if (!isOpen) return null;
@@ -60,6 +70,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     onAddCustomSound(customUrl);
     setCustomUrl('');
   };
+
+  const handleThemeChange = (newTheme: Theme) => {
+    setTheme(newTheme);
+    if (newTheme === Theme.Translucent) {
+      setIsPerformanceMode(false);
+    }
+  };
+
+  const isWakeLockSupported = typeof window !== 'undefined' && 'wakeLock' in navigator;
 
   return (
     <div 
@@ -80,15 +99,30 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="space-y-3">
           <h3 className="text-lg font-semibold">Tema</h3>
           <div className="grid grid-cols-3 gap-3">
-            <button onClick={() => setTheme(Theme.Light)} className={`py-2 rounded-lg transition-all ${theme === Theme.Light ? 'ring-2 ring-white font-bold' : ''} bg-gray-200 text-black`}>Claro</button>
-            <button onClick={() => setTheme(Theme.Dark)} className={`py-2 rounded-lg transition-all ${theme === Theme.Dark ? 'ring-2 ring-white font-bold' : ''} bg-gray-900`}>Escuro</button>
-            <button onClick={() => setTheme(Theme.Translucent)} className={`py-2 rounded-lg transition-all ${theme === Theme.Translucent ? 'ring-2 ring-white font-bold' : ''} bg-cover bg-center bg-[url('https://picsum.photos/200/100')]`}>Translúcido</button>
+            <button onClick={() => handleThemeChange(Theme.Light)} className={`py-2 rounded-lg transition-all ${theme === Theme.Light ? 'ring-2 ring-white font-bold' : ''} bg-gray-200 text-black`}>Claro</button>
+            <button onClick={() => handleThemeChange(Theme.Dark)} className={`py-2 rounded-lg transition-all ${theme === Theme.Dark ? 'ring-2 ring-white font-bold' : ''} bg-gray-900`}>Escuro</button>
+            <button onClick={() => handleThemeChange(Theme.Translucent)} className={`py-2 rounded-lg transition-all ${theme === Theme.Translucent ? 'ring-2 ring-white font-bold' : ''} bg-cover bg-center bg-[url('https://picsum.photos/200/100')]`}>Translúcido</button>
           </div>
         </div>
 
         <div className="space-y-4">
             <h3 className="text-lg font-semibold">Interface</h3>
             <Toggle label="Modo Container" isEnabled={isAttached} onToggle={() => setIsAttached(!isAttached)} />
+            { (theme === Theme.Light || theme === Theme.Dark) &&
+              <div>
+                <Toggle label="Modo de Desempenho" isEnabled={isPerformanceMode} onToggle={() => setIsPerformanceMode(!isPerformanceMode)} />
+                <p className="text-xs text-white/60 mt-1">Remove gradientes e animações para performance máxima.</p>
+              </div>
+            }
+            <div>
+              <Toggle label="Manter Tela Ativa" isEnabled={keepScreenOn} onToggle={() => setKeepScreenOn(!keepScreenOn)} disabled={!isWakeLockSupported} />
+              <p className={`text-xs text-white/60 mt-1 transition-opacity ${!isWakeLockSupported ? 'opacity-50' : ''}`}>
+                {isWakeLockSupported 
+                  ? "Previne que a tela desligue e o som seja interrompido. Ideal para sessões longas ou para dormir."
+                  : "Seu navegador não suporta esta funcionalidade."
+                }
+              </p>
+            </div>
         </div>
         
         <div className="space-y-3">

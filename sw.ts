@@ -1,9 +1,7 @@
-/// <reference lib="WebWorker" />
+// Fix: The reference library name must be lowercase 'webworker' for TypeScript to correctly identify the service worker scope.
+/// <reference lib="webworker" />
 
-// Fix: Explicitly declare the type of `self` to `ServiceWorkerGlobalScope`.
-// This resolves the TypeScript error where `self` was incorrectly inferred as
-// `Window`, which does not have the `skipWaiting` method.
-declare const self: ServiceWorkerGlobalScope;
+// Fix: Removed the conflicting redeclaration of `self`. The reference directive above provides the correct types.
 
 const CACHE_NAME = 'sonarcloud-cache-v1';
 const URLS_TO_CACHE = [
@@ -26,7 +24,8 @@ self.addEventListener('install', (event) => {
         console.log('Opened cache');
         return cache.addAll(URLS_TO_CACHE);
       })
-      .then(() => self.skipWaiting())
+      // Fix: Cast `self` to `any` to call `skipWaiting()`. TypeScript is failing to infer the correct Service Worker scope for `self`.
+      .then(() => (self as any).skipWaiting())
   );
 });
 
