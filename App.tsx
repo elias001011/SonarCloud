@@ -92,38 +92,43 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // If idle mode is disabled, ensure everything is clean.
     if (!isIdleModeEnabled) {
         setIsIdle(false);
-        if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+        if (idleTimerRef.current) {
+            clearTimeout(idleTimerRef.current);
+        }
         return;
     }
 
     const handleUserActivity = () => {
-        setIsIdle(false); // User is active, so not idle.
-        if (idleTimerRef.current) clearTimeout(idleTimerRef.current); // Stop any pending idle timer.
-        
-        // If music is playing, we should restart the idle countdown.
+        setIsIdle(false);
+        // Only reset the timer if music is playing.
         if (isPlaying) {
             resetIdleTimer();
         }
     };
 
     const activityEvents = ['mousemove', 'mousedown', 'touchstart', 'keydown', 'scroll'];
-    activityEvents.forEach(event => window.addEventListener(event, handleUserActivity));
+    activityEvents.forEach(event => {
+        window.addEventListener(event, handleUserActivity);
+    });
 
-    // If music starts playing, begin the idle countdown.
     if (isPlaying) {
         resetIdleTimer();
     } else {
-        // If music stops, just clear the pending countdown.
-        // Don't change isIdle state, to keep screen black if timer just finished.
-        if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+        // If music stops, clear the timer but don't exit idle mode.
+        if (idleTimerRef.current) {
+            clearTimeout(idleTimerRef.current);
+        }
     }
 
     return () => {
-        activityEvents.forEach(event => window.removeEventListener(event, handleUserActivity));
-        if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+        activityEvents.forEach(event => {
+            window.removeEventListener(event, handleUserActivity);
+        });
+        if (idleTimerRef.current) {
+            clearTimeout(idleTimerRef.current);
+        }
     };
   }, [isIdleModeEnabled, isPlaying, resetIdleTimer]);
   // --- End of Idle Mode Logic ---
@@ -289,10 +294,10 @@ const App: React.FC = () => {
   return (
     <main 
       style={themeStyle}
-      className={`relative h-screen font-sans ${!isEffectivePerformanceMode ? 'transition-all duration-500' : ''} ${themeClasses}`}
+      className={`relative min-h-screen font-sans ${!isEffectivePerformanceMode ? 'transition-all duration-500' : ''} ${themeClasses}`}
     >
       <div className={`absolute inset-0 w-full h-full ${!isEffectivePerformanceMode ? 'transition-opacity duration-500' : ''} ${theme === Theme.Translucent ? 'bg-black/50' : ''}`}></div>
-      <div className="relative z-10 flex flex-col h-full">
+      <div className="relative z-10 flex flex-col min-h-screen">
         <Header
           theme={theme}
           timerRemaining={timerRemaining}
