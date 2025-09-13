@@ -74,7 +74,10 @@ const Header: React.FC<HeaderProps> = ({
 
 
   return (
-    <header className={`sticky top-0 z-30 p-3 md:p-4 transition-colors duration-300 ${headerBg}`}>
+    <header 
+        className={`sticky top-0 z-30 p-3 md:p-4 transition-colors duration-300 ${headerBg}`}
+        style={{ paddingTop: `calc(0.75rem + env(safe-area-inset-top))` }}
+    >
       <div className={`grid grid-cols-3 items-center max-w-7xl mx-auto ${textColor}`}>
         <div className="flex items-center gap-3 justify-self-start">
           <div className="text-2xl">🌙</div>

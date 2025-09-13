@@ -187,7 +187,7 @@ const App: React.FC = () => {
     document.documentElement.classList.remove(Theme.Light, Theme.Dark);
     document.documentElement.classList.add(theme);
     if (theme === Theme.Translucent) {
-      setBackgroundImageUrl(`https://picsum.photos/1920/1080?random=${new Date().getTime()}`);
+      setBackgroundImageUrl(`https://picsum.photos/1920/1000?random=${new Date().getTime()}`);
     }
   }, [theme]);
 
@@ -340,7 +340,10 @@ const App: React.FC = () => {
                 isPerformanceMode={isEffectivePerformanceMode}
               />
             </div>
-            <div className="fixed bottom-0 left-0 right-0 z-30 bg-gray-900/50 backdrop-blur-lg p-3 text-white">
+            <div 
+                className="fixed bottom-0 left-0 right-0 z-30 bg-gray-900/50 backdrop-blur-lg p-3 text-white"
+                style={{ paddingBottom: `calc(0.75rem + env(safe-area-inset-bottom))` }}
+            >
                <div className="max-w-7xl mx-auto grid grid-cols-[1fr_auto] items-center gap-4">
                   <iframe
                     id="sc-widget-iframe-fixed"
@@ -359,7 +362,10 @@ const App: React.FC = () => {
             </div>
           </>
         )}
-        <footer className={`text-center py-8 mt-auto ${textColor} text-sm opacity-70`}>
+        <footer 
+            className={`text-center py-8 mt-auto ${textColor} text-sm opacity-70`}
+            style={{ paddingBottom: `calc(2rem + env(safe-area-inset-bottom))` }}
+        >
           Desenvolvido por <a href="https://instagram.com/elias_jrnunes" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-100">@elias_jrnunes</a>
         </footer>
       </div>
