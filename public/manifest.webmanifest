@@ -1,14 +1,14 @@
 {
   "name": "SonarCloud",
   "short_name": "SonarCloud",
-  "description": "Um reprodutor de paisagens sonoras para relaxar, focar ou dormir.",
+  "description": "A relaxing soundscape player using SoundCloud to help you sleep, focus, or unwind. Features multiple themes, a sleep timer with fade-out, and a curated list of high-quality ambient sounds.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "icons": [
     {
-      "src": "/public/icon.svg",
+      "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }

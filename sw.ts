@@ -4,15 +4,13 @@
 // Fix: Removed the conflicting redeclaration of `self`. The reference directive above provides the correct types.
 
 const CACHE_NAME = 'sonarcloud-cache-v1';
+// Corrected the list of URLs to cache for offline functionality.
+// Removed source files (.ts/.tsx) and fixed the icon path.
 const URLS_TO_CACHE = [
   '/',
   '/index.html',
-  '/index.tsx',
-  '/App.tsx',
-  '/constants.ts',
-  '/types.ts',
   '/manifest.webmanifest',
-  '/public/icon.svg',
+  '/icon.svg',
   'https://w.soundcloud.com/player/api.js'
 ];
 
