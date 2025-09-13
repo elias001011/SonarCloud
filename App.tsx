@@ -6,6 +6,7 @@ import Header from './components/Header';
 import SoundGrid from './components/SoundGrid';
 import SettingsModal from './components/SettingsModal';
 import { VolumeControl } from './components/VolumeControl';
+import IdleOverlay from './components/IdleOverlay';
 
 // Add WakeLockSentinel type for Screen Wake Lock API
 type WakeLockSentinel = EventTarget & {
@@ -26,12 +27,18 @@ const App: React.FC = () => {
   const [fadeOutDuration, setFadeOutDuration] = useState<FadeOutOption>(10);
   const [keepScreenOn, setKeepScreenOn] = useState<boolean>(false);
   const [isPerformanceMode, setIsPerformanceMode] = useState<boolean>(false);
+  const [isIdleModeEnabled, setIsIdleModeEnabled] = useState<boolean>(false);
 
   // Timer State
   const [timerDuration, setTimerDuration] = useState<number>(0);
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
   const [isTimerPaused, setIsTimerPaused] = useState<boolean>(true);
   
+  // Idle State
+  const [isIdle, setIsIdle] = useState<boolean>(false);
+  // Fix: Use ReturnType<typeof setTimeout> for browser compatibility instead of NodeJS.Timeout
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>('');
 
   // Screen Wake Lock
@@ -73,6 +80,49 @@ const App: React.FC = () => {
     },
     onPause: () => setIsPlaying(false),
   });
+  
+  // --- Idle Mode Logic ---
+  const resetIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+    }
+    idleTimerRef.current = setTimeout(() => {
+        setIsIdle(true);
+    }, 10000); // 10 seconds
+  }, []);
+
+  useEffect(() => {
+    if (!isIdleModeEnabled || !isPlaying) {
+        setIsIdle(false);
+        if (idleTimerRef.current) {
+            clearTimeout(idleTimerRef.current);
+        }
+        return;
+    }
+
+    const activityEvents = ['mousemove', 'mousedown', 'touchstart', 'keydown', 'scroll'];
+    
+    const handleUserActivity = () => {
+        setIsIdle(false);
+        resetIdleTimer();
+    };
+
+    activityEvents.forEach(event => {
+        window.addEventListener(event, handleUserActivity);
+    });
+
+    resetIdleTimer();
+
+    return () => {
+        activityEvents.forEach(event => {
+            window.removeEventListener(event, handleUserActivity);
+        });
+        if (idleTimerRef.current) {
+            clearTimeout(idleTimerRef.current);
+        }
+    };
+  }, [isIdleModeEnabled, isPlaying, resetIdleTimer]);
+  // --- End of Idle Mode Logic ---
 
   // --- Screen Wake Lock Logic ---
   const acquireWakeLock = useCallback(async () => {
@@ -201,11 +251,21 @@ const App: React.FC = () => {
       alert("Por favor, insira um link válido do SoundCloud.");
     }
   }, [widget]);
+  
+  const handleSetKeepScreenOn = (keepOn: boolean) => {
+    setKeepScreenOn(keepOn);
+    if (!keepOn) {
+        setIsIdleModeEnabled(false);
+        setIsIdle(false);
+    }
+  };
+
+  const isEffectivePerformanceMode = isPerformanceMode || (isIdle && theme !== Theme.Translucent);
 
   const themeClasses = useMemo(() => {
     if (theme === Theme.Translucent) return 'bg-cover bg-center bg-fixed text-white';
     
-    if (isPerformanceMode) {
+    if (isEffectivePerformanceMode) {
       const bgColor = theme === Theme.Light ? 'bg-white' : 'bg-black';
       const textColor = theme === Theme.Light ? 'text-slate-900' : 'text-white';
       return `${bgColor} ${textColor}`;
@@ -214,7 +274,7 @@ const App: React.FC = () => {
     const gradient = theme === Theme.Light ? 'from-sky-100 to-blue-200' : 'from-slate-800 to-black';
     const textColor = theme === Theme.Light ? 'text-slate-800' : 'text-white';
     return `bg-gradient-to-br ${gradient} ${textColor}`;
-  }, [theme, isPerformanceMode]);
+  }, [theme, isEffectivePerformanceMode]);
   
   const themeStyle = useMemo(() => {
     return theme === Theme.Translucent ? { backgroundImage: `url(${backgroundImageUrl})` } : {};
@@ -225,9 +285,9 @@ const App: React.FC = () => {
   return (
     <main 
       style={themeStyle}
-      className={`relative min-h-screen font-sans ${!isPerformanceMode ? 'transition-all duration-500' : ''} ${themeClasses}`}
+      className={`relative min-h-screen font-sans ${!isEffectivePerformanceMode ? 'transition-all duration-500' : ''} ${themeClasses}`}
     >
-      <div className={`absolute inset-0 w-full h-full ${!isPerformanceMode ? 'transition-opacity duration-500' : ''} ${theme === Theme.Translucent ? 'bg-black/50' : ''}`}></div>
+      <div className={`absolute inset-0 w-full h-full ${!isEffectivePerformanceMode ? 'transition-opacity duration-500' : ''} ${theme === Theme.Translucent ? 'bg-black/50' : ''}`}></div>
       <div className="relative z-10 flex flex-col min-h-screen">
         <Header
           theme={theme}
@@ -264,7 +324,7 @@ const App: React.FC = () => {
               currentSoundUrl={currentSound?.url}
               isPlaying={isPlaying}
               loadingSoundUrl={loadingSoundUrl}
-              isPerformanceMode={isPerformanceMode}
+              isPerformanceMode={isEffectivePerformanceMode}
             />
           </div>
         ) : (
@@ -277,7 +337,7 @@ const App: React.FC = () => {
                 currentSoundUrl={currentSound?.url}
                 isPlaying={isPlaying}
                 loadingSoundUrl={loadingSoundUrl}
-                isPerformanceMode={isPerformanceMode}
+                isPerformanceMode={isEffectivePerformanceMode}
               />
             </div>
             <div className="fixed bottom-0 left-0 right-0 z-30 bg-gray-900/50 backdrop-blur-lg p-3 text-white">
@@ -315,10 +375,13 @@ const App: React.FC = () => {
         setFadeOutDuration={setFadeOutDuration}
         onAddCustomSound={handleAddCustomSound}
         keepScreenOn={keepScreenOn}
-        setKeepScreenOn={setKeepScreenOn}
+        setKeepScreenOn={handleSetKeepScreenOn}
         isPerformanceMode={isPerformanceMode}
         setIsPerformanceMode={setIsPerformanceMode}
+        isIdleModeEnabled={isIdleModeEnabled}
+        setIsIdleModeEnabled={setIsIdleModeEnabled}
       />
+      {isIdle && <IdleOverlay onExit={() => setIsIdle(false)} />}
     </main>
   );
 };

@@ -11,9 +11,10 @@ export const useSoundCloudWidget = (iframeId: string, events: WidgetEvents) => {
   const widgetRef = useRef<SoundCloudWidget | null>(null);
   const [isReady, setIsReady] = useState<boolean>(false);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Fix: Use ReturnType for browser compatibility instead of NodeJS.Timeout
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const remainingTimeRef = useRef<number>(0);
   const isPausedRef = useRef<boolean>(true);
 

@@ -22,6 +22,9 @@ interface SettingsModalProps {
   // Performance
   isPerformanceMode: boolean;
   setIsPerformanceMode: (isPerformance: boolean) => void;
+  // Idle Mode
+  isIdleModeEnabled: boolean;
+  setIsIdleModeEnabled: (isEnabled: boolean) => void;
 }
 
 const fadeOutOptions: { label: string; value: FadeOutOption }[] = [
@@ -62,6 +65,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   setKeepScreenOn,
   isPerformanceMode,
   setIsPerformanceMode,
+  isIdleModeEnabled,
+  setIsIdleModeEnabled,
 }) => {
   const [customUrl, setCustomUrl] = useState('');
   if (!isOpen) return null;
@@ -123,6 +128,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 }
               </p>
             </div>
+             {keepScreenOn && isWakeLockSupported && (
+              <div className="pt-2">
+                <Toggle label="Modo Ocioso" isEnabled={isIdleModeEnabled} onToggle={() => setIsIdleModeEnabled(!isIdleModeEnabled)} />
+                <p className="text-xs text-white/60 mt-1">
+                    Após 10s de inatividade, a tela ficará preta para economizar bateria em telas AMOLED.
+                </p>
+              </div>
+            )}
         </div>
         
         <div className="space-y-3">

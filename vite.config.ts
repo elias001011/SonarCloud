@@ -10,7 +10,8 @@ export default defineConfig(({ mode }) => {
       },
       resolve: {
         alias: {
-          '@': path.resolve(__dirname, '.'),
+          // Fix: `__dirname` is not available in ES modules. Use `process.cwd()` to get the project root.
+          '@': path.resolve(process.cwd()),
         }
       }
     };
