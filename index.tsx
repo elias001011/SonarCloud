@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 
 // The service worker is essential for PWA functionality like offline access.
-// It is now re-enabled to ensure the app is installable and works offline.
+// Re-enabling for production deployment.
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.ts')
