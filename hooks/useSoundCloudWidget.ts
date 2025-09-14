@@ -5,6 +5,7 @@ interface WidgetEvents {
   onPlay?: () => void;
   onPause?: () => void;
   onFinish?: () => void;
+  onProgress?: (positionInfo: { currentPosition: number; duration: number }) => void;
 }
 
 export const useSoundCloudWidget = (iframeId: string, events: WidgetEvents) => {
@@ -46,15 +47,43 @@ export const useSoundCloudWidget = (iframeId: string, events: WidgetEvents) => {
         scWidgetInstance = sc.Widget(iframeElement as HTMLIFrameElement);
         widgetRef.current = scWidgetInstance;
 
+        let currentDuration = 0; // Cache duration per track
+
         const readyCallback = () => setIsReady(true);
-        const playCallback = () => eventsRef.current.onPlay?.();
-        const pauseCallback = () => eventsRef.current.onPause?.();
-        const finishCallback = () => eventsRef.current.onFinish?.();
+        
+        const playCallback = () => {
+          // When a new track starts, fetch its duration to enable progress tracking.
+          widgetRef.current?.getDuration((duration) => {
+            currentDuration = duration;
+          });
+          eventsRef.current.onPlay?.();
+        };
+
+        const pauseCallback = () => {
+          currentDuration = 0; // Reset duration on pause
+          eventsRef.current.onPause?.();
+        };
+        
+        const finishCallback = () => {
+          currentDuration = 0; // Reset duration on finish
+          eventsRef.current.onFinish?.();
+        };
+
+        const progressCallback = (progressData: { currentPosition: number }) => {
+            // Only emit progress if we have a valid duration.
+            if (currentDuration > 0) {
+                eventsRef.current.onProgress?.({
+                    currentPosition: progressData.currentPosition,
+                    duration: currentDuration,
+                });
+            }
+        };
         
         scWidgetInstance.bind(sc.Widget.Events.READY, readyCallback);
         scWidgetInstance.bind(sc.Widget.Events.PLAY, playCallback);
         scWidgetInstance.bind(sc.Widget.Events.PAUSE, pauseCallback);
         scWidgetInstance.bind(sc.Widget.Events.FINISH, finishCallback);
+        scWidgetInstance.bind(sc.Widget.Events.PLAY_PROGRESS, progressCallback);
 
         return () => {
              if (scWidgetInstance) {
@@ -63,6 +92,7 @@ export const useSoundCloudWidget = (iframeId: string, events: WidgetEvents) => {
                     scWidgetInstance.unbind(sc.Widget.Events.PLAY);
                     scWidgetInstance.unbind(sc.Widget.Events.PAUSE);
                     scWidgetInstance.unbind(sc.Widget.Events.FINISH);
+                    scWidgetInstance.unbind(sc.Widget.Events.PLAY_PROGRESS);
                 } catch (e) { /* Widget might already be destroyed */ }
             }
         };

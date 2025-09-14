@@ -34,10 +34,10 @@ const App: React.FC = () => {
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
   const [isTimerPaused, setIsTimerPaused] = useState<boolean>(true);
   
-  // Idle and Fullscreen State
+  // Idle, Fullscreen and Media Session State
   const [isIdle, setIsIdle] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(!!document.fullscreenElement);
-  // Fix: Use ReturnType<typeof setTimeout> for browser compatibility instead of NodeJS.Timeout
+  const [positionState, setPositionState] = useState<{ duration: number; position: number } | null>(null);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string>('');
@@ -67,13 +67,9 @@ const App: React.FC = () => {
     url.searchParams.set('hide_related', 'true');
     url.searchParams.set('show_comments', 'false');
     url.searchParams.set('show_user', 'false');
-    // Fix: Correct property 'search_params' to 'searchParams'.
     url.searchParams.set('show_reposts', 'false');
-    // Fix: Correct property 'search_params' to 'searchParams'.
     url.searchParams.set('visual', 'true');
-    // Fix: Correct property 'search_params' to 'searchParams'.
     url.searchParams.set('show_artwork', 'false');
-    // Fix: Correct property 'search_params' to 'searchParams'.
     url.searchParams.set('color', 'ff5500');
     return url.toString();
   }, []);
@@ -82,8 +78,33 @@ const App: React.FC = () => {
     onPlay: () => {
       setIsPlaying(true);
       setLoadingSoundUrl(null);
+      // Set metadata here for maximum reliability, ensuring the system notification
+      // updates at the exact moment playback starts.
+      if ('mediaSession' in navigator && currentSound) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: currentSound.name,
+          artist: 'SonarCloud',
+          album: 'Sons Relaxantes',
+          artwork: [
+            // Provide multiple sizes and an absolute URL for better compatibility.
+            { src: new URL('/icon.svg', window.location.origin).href, sizes: '96x96', type: 'image/svg+xml' },
+            { src: new URL('/icon.svg', window.location.origin).href, sizes: '128x128', type: 'image/svg+xml' },
+            { src: new URL('/icon.svg', window.location.origin).href, sizes: '192x192', type: 'image/svg+xml' },
+            { src: new URL('/icon.svg', window.location.origin).href, sizes: '256x256', type: 'image/svg+xml' },
+            { src: new URL('/icon.svg', window.location.origin).href, sizes: '384x384', type: 'image/svg+xml' },
+            { src: new URL('/icon.svg', window.location.origin).href, sizes: '512x512', type: 'image/svg+xml' },
+          ]
+        });
+      }
     },
-    onPause: () => setIsPlaying(false),
+    onPause: () => {
+      setIsPlaying(false);
+      setPositionState(null); // Clear position state when paused
+    },
+    onProgress: ({ currentPosition, duration }) => {
+      // SoundCloud provides time in ms, Media Session API requires seconds.
+      setPositionState({ position: currentPosition / 1000, duration: duration / 1000 });
+    },
   });
   
   // --- Idle Mode Logic ---
@@ -198,52 +219,48 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // --- Robust Media Session API for Background Playback ---
-  // Update metadata whenever the sound changes to ensure the notification is always correct.
-  useEffect(() => {
-    if ('mediaSession' in navigator && currentSound) {
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentSound.name,
-        artist: 'SonarCloud',
-        album: 'Relaxing Sounds',
-        artwork: [{ src: '/icon.svg', sizes: '512x512', type: 'image/svg+xml' }]
-      });
-    }
-  }, [currentSound]);
-
-  // Update playback state (play/pause) separately for reliability.
+  // --- Media Session API ---
+  
+  // This effect manages the playback state (play/pause) and registers the action handlers
+  // (e.g., for lock screen controls).
   useEffect(() => {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
-    }
-  }, [isPlaying]);
-
-  // Set up action handlers to control playback from the notification/lock screen.
-  useEffect(() => {
-    if ('mediaSession' in navigator) {
+      
       const handlePlay = () => widget.play();
       const handlePause = () => widget.pause();
 
-      navigator.mediaSession.setActionHandler('play', handlePlay);
-      navigator.mediaSession.setActionHandler('pause', handlePause);
-
-      // Registering other handlers (even if null) signals to the OS
-      // that this is a full-featured media app, improving background stability.
+      navigator.mediaSession.setActionHandler('play', isPlaying ? null : handlePlay);
+      navigator.mediaSession.setActionHandler('pause', isPlaying ? handlePause : null);
+      
+      // Registering other handlers signals to the OS that this is a full-featured media app,
+      // improving background stability.
       navigator.mediaSession.setActionHandler('seekbackward', null);
       navigator.mediaSession.setActionHandler('seekforward', null);
       navigator.mediaSession.setActionHandler('previoustrack', null);
       navigator.mediaSession.setActionHandler('nexttrack', null);
-
-      return () => {
-        navigator.mediaSession.setActionHandler('play', null);
-        navigator.mediaSession.setActionHandler('pause', null);
-        navigator.mediaSession.setActionHandler('seekbackward', null);
-        navigator.mediaSession.setActionHandler('seekforward', null);
-        navigator.mediaSession.setActionHandler('previoustrack', null);
-        navigator.mediaSession.setActionHandler('nexttrack', null);
-      };
     }
-  }, [widget]);
+  }, [isPlaying, widget]);
+
+  // This effect manages the track progress bar in the system notification.
+  // This is crucial for stability, as it proves to the OS that media is actively progressing.
+  useEffect(() => {
+    if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+      if (isPlaying && positionState && positionState.duration > 0) {
+        try {
+          navigator.mediaSession.setPositionState({
+            duration: positionState.duration,
+            position: positionState.position,
+          });
+        } catch (e) {
+          console.error("Failed to set Media Session position state:", e);
+        }
+      } else {
+        // Clear the position state when not playing or if state is invalid.
+        navigator.mediaSession.setPositionState(null);
+      }
+    }
+  }, [isPlaying, positionState]);
   // --- End of Media Session API ---
 
   // --- Screen Wake Lock Logic ---

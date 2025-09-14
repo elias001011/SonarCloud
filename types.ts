@@ -25,6 +25,8 @@ export interface SoundCloudWidget {
   toggle: () => void;
   setVolume: (volume: number) => void;
   getVolume: (callback: (volume: number) => void) => void;
+  // Fix: Add missing getDuration method to the SoundCloudWidget interface.
+  getDuration: (callback: (duration: number) => void) => void;
   bind: (event: string, callback: (...args: any[]) => void) => void;
   unbind: (event: string) => void;
 }
