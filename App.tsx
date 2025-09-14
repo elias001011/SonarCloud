@@ -133,6 +133,69 @@ const App: React.FC = () => {
   }, [isIdleModeEnabled, isPlaying, resetIdleTimer]);
   // --- End of Idle Mode Logic ---
 
+  const isEffectivePerformanceMode = isPerformanceMode || (isIdle && theme !== Theme.Translucent);
+
+  // --- Dynamic Theme Color for PWA ---
+  useEffect(() => {
+    const metaThemeColor = document.querySelector("meta[name=theme-color]");
+    if (metaThemeColor) {
+        let newColor = '#0f172a'; // Default for Dark theme
+
+        if (isIdle) {
+            newColor = '#000000';
+        } else if (isEffectivePerformanceMode) {
+            newColor = theme === Theme.Light ? '#FFFFFF' : '#000000';
+        } else {
+            switch (theme) {
+                case Theme.Light:
+                    newColor = '#FFFFFF';
+                    break;
+                case Theme.Dark:
+                    newColor = '#0f172a'; // slate-900, a dark blueish color.
+                    break;
+                case Theme.Translucent:
+                    newColor = '#000000';
+                    break;
+            }
+        }
+        metaThemeColor.setAttribute("content", newColor);
+    }
+  }, [theme, isEffectivePerformanceMode, isIdle]);
+
+  // --- Fullscreen for Idle Mode ---
+  useEffect(() => {
+    const enterFullscreen = async () => {
+      try {
+        if (document.documentElement.requestFullscreen) {
+          await document.documentElement.requestFullscreen();
+        }
+      } catch (err) {
+        console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
+      }
+    };
+
+    const exitFullscreen = async () => {
+      try {
+        if (document.exitFullscreen && document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+      } catch (err) {
+        console.error(`Error attempting to exit fullscreen mode: ${err.message} (${err.name})`);
+      }
+    };
+
+    if (isIdle) {
+      enterFullscreen();
+    } else {
+      exitFullscreen();
+    }
+    
+    // Cleanup on unmount to ensure fullscreen is exited
+    return () => {
+      exitFullscreen();
+    };
+  }, [isIdle]);
+
   // --- Screen Wake Lock Logic ---
   const acquireWakeLock = useCallback(async () => {
     if ('wakeLock' in navigator && !wakeLockRef.current) {
@@ -268,8 +331,6 @@ const App: React.FC = () => {
         setIsIdle(false);
     }
   };
-
-  const isEffectivePerformanceMode = isPerformanceMode || (isIdle && theme !== Theme.Translucent);
 
   const themeClasses = useMemo(() => {
     if (theme === Theme.Translucent) return 'bg-cover bg-center bg-fixed text-white';
