@@ -25,6 +25,10 @@ interface SettingsModalProps {
   // Idle Mode
   isIdleModeEnabled: boolean;
   setIsIdleModeEnabled: (isEnabled: boolean) => void;
+  // Fullscreen
+  isFullscreen: boolean;
+  onEnterFullscreen: () => void;
+  onExitFullscreen: () => void;
 }
 
 const fadeOutOptions: { label: string; value: FadeOutOption }[] = [
@@ -67,6 +71,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   setIsPerformanceMode,
   isIdleModeEnabled,
   setIsIdleModeEnabled,
+  isFullscreen,
+  onEnterFullscreen,
+  onExitFullscreen,
 }) => {
   const [customUrl, setCustomUrl] = useState('');
   if (!isOpen) return null;
@@ -80,6 +87,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     setTheme(newTheme);
     if (newTheme === Theme.Translucent) {
       setIsPerformanceMode(false);
+    }
+  };
+
+  const handleFullscreenToggle = () => {
+    if (isFullscreen) {
+        onExitFullscreen();
+    } else {
+        onEnterFullscreen();
     }
   };
 
@@ -113,6 +128,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="space-y-4">
             <h3 className="text-lg font-semibold">Interface</h3>
             <Toggle label="Modo Container" isEnabled={isAttached} onToggle={() => setIsAttached(!isAttached)} />
+             <button
+                onClick={handleFullscreenToggle}
+                className="w-full text-center py-2 px-3 rounded-md bg-white/10 hover:bg-white/20 transition-colors"
+            >
+                {isFullscreen ? 'Sair da Tela Cheia' : 'Entrar em Tela Cheia'}
+            </button>
             { (theme === Theme.Light || theme === Theme.Dark) &&
               <div>
                 <Toggle label="Modo de Desempenho" isEnabled={isPerformanceMode} onToggle={() => setIsPerformanceMode(!isPerformanceMode)} />

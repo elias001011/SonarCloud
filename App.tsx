@@ -35,8 +35,9 @@ const App: React.FC = () => {
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
   const [isTimerPaused, setIsTimerPaused] = useState<boolean>(true);
   
-  // Idle State
+  // Idle and Fullscreen State
   const [isIdle, setIsIdle] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(!!document.fullscreenElement);
   // Fix: Use ReturnType<typeof setTimeout> for browser compatibility instead of NodeJS.Timeout
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -182,6 +183,16 @@ const App: React.FC = () => {
     } catch (err) {
       console.error(`Error attempting to exit fullscreen mode: ${err.message} (${err.name})`);
     }
+  }, []);
+  
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+        setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+        document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
   }, []);
 
   // --- Screen Wake Lock Logic ---
@@ -449,6 +460,9 @@ const App: React.FC = () => {
         setIsPerformanceMode={setIsPerformanceMode}
         isIdleModeEnabled={isIdleModeEnabled}
         setIsIdleModeEnabled={setIsIdleModeEnabled}
+        isFullscreen={isFullscreen}
+        onEnterFullscreen={handleEnterFullscreen}
+        onExitFullscreen={handleExitFullscreen}
       />
       {isIdle && <IdleOverlay onExit={handleExitIdleMode} />}
       {isIdle && <FullscreenButton onClick={handleEnterFullscreen} />}
