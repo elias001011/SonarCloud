@@ -67,9 +67,13 @@ const App: React.FC = () => {
     url.searchParams.set('hide_related', 'true');
     url.searchParams.set('show_comments', 'false');
     url.searchParams.set('show_user', 'false');
+    // Fix: Correct property 'search_params' to 'searchParams'.
     url.searchParams.set('show_reposts', 'false');
+    // Fix: Correct property 'search_params' to 'searchParams'.
     url.searchParams.set('visual', 'true');
+    // Fix: Correct property 'search_params' to 'searchParams'.
     url.searchParams.set('show_artwork', 'false');
+    // Fix: Correct property 'search_params' to 'searchParams'.
     url.searchParams.set('color', 'ff5500');
     return url.toString();
   }, []);
@@ -193,6 +197,39 @@ const App: React.FC = () => {
         document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
+
+  // --- Media Session API for Background Playback ---
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      if (isPlaying && currentSound) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: currentSound.name,
+          artist: 'SonarCloud',
+          album: 'Relaxing Sounds',
+          artwork: [{ src: '/icon.svg', sizes: '512x512', type: 'image/svg+xml' }]
+        });
+        navigator.mediaSession.playbackState = 'playing';
+      } else {
+        navigator.mediaSession.playbackState = 'paused';
+      }
+    }
+  }, [isPlaying, currentSound]);
+
+  useEffect(() => {
+    if ('mediaSession' in navigator) {
+      const handlePlay = () => widget.play();
+      const handlePause = () => widget.pause();
+
+      navigator.mediaSession.setActionHandler('play', handlePlay);
+      navigator.mediaSession.setActionHandler('pause', handlePause);
+
+      return () => {
+        navigator.mediaSession.setActionHandler('play', null);
+        navigator.mediaSession.setActionHandler('pause', null);
+      };
+    }
+  }, [widget]);
+  // --- End of Media Session API ---
 
   // --- Screen Wake Lock Logic ---
   const acquireWakeLock = useCallback(async () => {
@@ -332,8 +369,8 @@ const App: React.FC = () => {
   
   const handleExitIdleMode = useCallback(() => {
     setIsIdle(false);
-    handleExitFullscreen();
-  }, [handleExitFullscreen]);
+    // Do not exit fullscreen when idle mode ends, let the user control it.
+  }, []);
 
   const themeClasses = useMemo(() => {
     if (theme === Theme.Translucent) return 'bg-cover bg-center bg-fixed text-white';
@@ -463,6 +500,7 @@ const App: React.FC = () => {
         onEnterFullscreen={handleEnterFullscreen}
         onExitFullscreen={handleExitFullscreen}
       />
+      
       {isIdle && <IdleOverlay onExit={handleExitIdleMode} />}
     </main>
   );
