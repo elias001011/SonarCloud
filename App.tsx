@@ -7,6 +7,7 @@ import SoundGrid from './components/SoundGrid';
 import SettingsModal from './components/SettingsModal';
 import { VolumeControl } from './components/VolumeControl';
 import IdleOverlay from './components/IdleOverlay';
+import FullscreenButton from './components/FullscreenButton';
 
 // Add WakeLockSentinel type for Screen Wake Lock API
 type WakeLockSentinel = EventTarget & {
@@ -162,39 +163,26 @@ const App: React.FC = () => {
     }
   }, [theme, isEffectivePerformanceMode, isIdle]);
 
-  // --- Fullscreen for Idle Mode ---
-  useEffect(() => {
-    const enterFullscreen = async () => {
-      try {
-        if (document.documentElement.requestFullscreen) {
-          await document.documentElement.requestFullscreen();
-        }
-      } catch (err) {
-        console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
+  // --- Fullscreen Logic ---
+  const handleEnterFullscreen = useCallback(async () => {
+    try {
+      if (document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
       }
-    };
-
-    const exitFullscreen = async () => {
-      try {
-        if (document.exitFullscreen && document.fullscreenElement) {
-          await document.exitFullscreen();
-        }
-      } catch (err) {
-        console.error(`Error attempting to exit fullscreen mode: ${err.message} (${err.name})`);
-      }
-    };
-
-    if (isIdle) {
-      enterFullscreen();
-    } else {
-      exitFullscreen();
+    } catch (err) {
+      console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
     }
-    
-    // Cleanup on unmount to ensure fullscreen is exited
-    return () => {
-      exitFullscreen();
-    };
-  }, [isIdle]);
+  }, []);
+
+  const handleExitFullscreen = useCallback(async () => {
+    try {
+      if (document.exitFullscreen && document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+    } catch (err) {
+      console.error(`Error attempting to exit fullscreen mode: ${err.message} (${err.name})`);
+    }
+  }, []);
 
   // --- Screen Wake Lock Logic ---
   const acquireWakeLock = useCallback(async () => {
@@ -331,6 +319,11 @@ const App: React.FC = () => {
         setIsIdle(false);
     }
   };
+  
+  const handleExitIdleMode = useCallback(() => {
+    setIsIdle(false);
+    handleExitFullscreen();
+  }, [handleExitFullscreen]);
 
   const themeClasses = useMemo(() => {
     if (theme === Theme.Translucent) return 'bg-cover bg-center bg-fixed text-white';
@@ -457,7 +450,8 @@ const App: React.FC = () => {
         isIdleModeEnabled={isIdleModeEnabled}
         setIsIdleModeEnabled={setIsIdleModeEnabled}
       />
-      {isIdle && <IdleOverlay onExit={() => setIsIdle(false)} />}
+      {isIdle && <IdleOverlay onExit={handleExitIdleMode} />}
+      {isIdle && <FullscreenButton onClick={handleEnterFullscreen} />}
     </main>
   );
 };
