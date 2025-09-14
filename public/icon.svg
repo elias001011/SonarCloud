@@ -1,4 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Blue background for the maskable area -->
   <circle cx="50" cy="50" r="50" fill="#0f172a"/>
-  <path d="M 50 10 A 40 40 0 1 1 50 90 A 30 30 0 1 0 50 10 Z" fill="#FBBF24"/>
+  <!-- Yellow circle for the moon -->
+  <circle cx="50" cy="50" r="40" fill="#FBBF24"/>
+  <!-- Blue circle overlay to "cut out" and form the crescent shape -->
+  <circle cx="60" cy="50" r="35" fill="#0f172a"/>
 </svg>
