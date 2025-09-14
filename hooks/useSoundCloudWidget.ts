@@ -49,27 +49,40 @@ export const useSoundCloudWidget = (iframeId: string, events: WidgetEvents) => {
 
         let currentDuration = 0; // Cache duration per track
 
-        const readyCallback = () => setIsReady(true);
+        // Creates a robust function to fetch and update the track duration.
+        const updateDuration = () => {
+          widgetRef.current?.getDuration((duration) => {
+            if (duration > 0) {
+              currentDuration = duration;
+            }
+          });
+        };
+
+        const readyCallback = () => {
+          setIsReady(true);
+          updateDuration(); // Attempt to get duration on ready for the initial track
+        };
         
         const playCallback = () => {
-          // When a new track starts, fetch its duration to enable progress tracking.
-          widgetRef.current?.getDuration((duration) => {
-            currentDuration = duration;
-          });
+          updateDuration(); // Get duration as soon as the track starts playing
           eventsRef.current.onPlay?.();
         };
 
         const pauseCallback = () => {
-          currentDuration = 0; // Reset duration on pause
+          // Do not reset duration on pause, as the track is still loaded and can be resumed.
           eventsRef.current.onPause?.();
         };
         
         const finishCallback = () => {
-          currentDuration = 0; // Reset duration on finish
+          currentDuration = 0; // Reset duration only when the track finishes completely
           eventsRef.current.onFinish?.();
         };
 
         const progressCallback = (progressData: { currentPosition: number }) => {
+            // As a fallback, if duration is missing, try to fetch it again.
+            if (currentDuration === 0) {
+              updateDuration();
+            }
             // Only emit progress if we have a valid duration.
             if (currentDuration > 0) {
                 eventsRef.current.onProgress?.({
