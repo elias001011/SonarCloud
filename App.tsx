@@ -198,23 +198,27 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // --- Media Session API for Background Playback ---
+  // --- Robust Media Session API for Background Playback ---
+  // Update metadata whenever the sound changes to ensure the notification is always correct.
+  useEffect(() => {
+    if ('mediaSession' in navigator && currentSound) {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentSound.name,
+        artist: 'SonarCloud',
+        album: 'Relaxing Sounds',
+        artwork: [{ src: '/icon.svg', sizes: '512x512', type: 'image/svg+xml' }]
+      });
+    }
+  }, [currentSound]);
+
+  // Update playback state (play/pause) separately for reliability.
   useEffect(() => {
     if ('mediaSession' in navigator) {
-      if (isPlaying && currentSound) {
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: currentSound.name,
-          artist: 'SonarCloud',
-          album: 'Relaxing Sounds',
-          artwork: [{ src: '/icon.svg', sizes: '512x512', type: 'image/svg+xml' }]
-        });
-        navigator.mediaSession.playbackState = 'playing';
-      } else {
-        navigator.mediaSession.playbackState = 'paused';
-      }
+      navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
     }
-  }, [isPlaying, currentSound]);
+  }, [isPlaying]);
 
+  // Set up action handlers to control playback from the notification/lock screen.
   useEffect(() => {
     if ('mediaSession' in navigator) {
       const handlePlay = () => widget.play();
@@ -223,9 +227,20 @@ const App: React.FC = () => {
       navigator.mediaSession.setActionHandler('play', handlePlay);
       navigator.mediaSession.setActionHandler('pause', handlePause);
 
+      // Registering other handlers (even if null) signals to the OS
+      // that this is a full-featured media app, improving background stability.
+      navigator.mediaSession.setActionHandler('seekbackward', null);
+      navigator.mediaSession.setActionHandler('seekforward', null);
+      navigator.mediaSession.setActionHandler('previoustrack', null);
+      navigator.mediaSession.setActionHandler('nexttrack', null);
+
       return () => {
         navigator.mediaSession.setActionHandler('play', null);
         navigator.mediaSession.setActionHandler('pause', null);
+        navigator.mediaSession.setActionHandler('seekbackward', null);
+        navigator.mediaSession.setActionHandler('seekforward', null);
+        navigator.mediaSession.setActionHandler('previoustrack', null);
+        navigator.mediaSession.setActionHandler('nexttrack', null);
       };
     }
   }, [widget]);
@@ -313,8 +328,8 @@ const App: React.FC = () => {
     event.preventDefault();
     if (sound.url !== currentSound?.url) {
       setLoadingSoundUrl(sound.url);
+      setCurrentSound(sound); // Set sound info immediately for Media Session
       widget.load(sound.url, { auto_play: true, show_artwork: true });
-      setCurrentSound(sound);
     } else {
       widget.toggle();
     }
@@ -347,15 +362,36 @@ const App: React.FC = () => {
     }
   }, [timerDuration, handleSetTimer]);
   
-  const handleAddCustomSound = useCallback((url: string) => {
-    if (url && url.includes('soundcloud.com')) {
-      const customSound: Sound = { name: 'Faixa Personalizada', url: url, duration: 'N/A' };
-      setLoadingSoundUrl(url);
-      widget.load(url, { auto_play: true, show_artwork: true });
-      setCurrentSound(customSound);
-      setIsSettingsOpen(false);
-    } else {
+  const handleAddCustomSound = useCallback(async (url: string) => {
+    if (!url || !url.includes('soundcloud.com')) {
       alert("Por favor, insira um link válido do SoundCloud.");
+      return;
+    }
+    
+    setLoadingSoundUrl(url);
+    setIsSettingsOpen(false);
+    
+    try {
+      // Fetch track title from SoundCloud oEmbed endpoint for a better user experience.
+      const response = await fetch(`https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(url)}`);
+      if (!response.ok) throw new Error('Failed to fetch track info');
+      const data = await response.json();
+      const title = data.title || 'Faixa Personalizada';
+      
+      // The oEmbed title can be long ("Title by Artist"), let's shorten it.
+      const shorterTitle = title.split(' by ')[0];
+      const customSound: Sound = { name: shorterTitle, url: url, duration: 'N/A' };
+      
+      setCurrentSound(customSound);
+      widget.load(url, { auto_play: true, show_artwork: true });
+
+    } catch (error) {
+      console.error("Error fetching SoundCloud track info:", error);
+      // Fallback to the old behavior if the API fails, so the sound still plays.
+      const customSound: Sound = { name: 'Faixa Personalizada', url: url, duration: 'N/A' };
+      setCurrentSound(customSound);
+      widget.load(url, { auto_play: true, show_artwork: true });
+      alert("Não foi possível obter o nome da faixa, mas ela será tocada.");
     }
   }, [widget]);
   
