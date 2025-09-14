@@ -7,7 +7,6 @@ import SoundGrid from './components/SoundGrid';
 import SettingsModal from './components/SettingsModal';
 import { VolumeControl } from './components/VolumeControl';
 import IdleOverlay from './components/IdleOverlay';
-import FullscreenButton from './components/FullscreenButton';
 
 // Add WakeLockSentinel type for Screen Wake Lock API
 type WakeLockSentinel = EventTarget & {
@@ -465,7 +464,6 @@ const App: React.FC = () => {
         onExitFullscreen={handleExitFullscreen}
       />
       {isIdle && <IdleOverlay onExit={handleExitIdleMode} />}
-      {isIdle && <FullscreenButton onClick={handleEnterFullscreen} />}
     </main>
   );
 };
