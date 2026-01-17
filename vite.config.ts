@@ -1,19 +1,19 @@
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
-// Fix: Import `process` to get correct typings for `process.cwd()`
-import process from 'process';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
+      // Vital for GitHub Pages: allows the app to load assets from relative paths (e.g. ./assets/...)
+      // instead of absolute root paths (e.g. /assets/...), preventing 404s in subdirectories.
+      base: './',
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
       },
       resolve: {
         alias: {
-          // Fix: `__dirname` is not available in ES modules. Use `process.cwd()` to get the project root.
-          '@': path.resolve(process.cwd()),
+          '@': path.resolve('.'),
         }
       }
     };

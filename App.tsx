@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Sound, Theme, FadeOutOption } from './types';
 import { SOUND_CATEGORIES, DEFAULT_SOUND } from './constants';
 import { useSoundCloudWidget } from './hooks/useSoundCloudWidget';
+import { useAudioKeepAlive } from './hooks/useAudioKeepAlive';
 import Header from './components/Header';
 import SoundGrid from './components/SoundGrid';
 import SettingsModal from './components/SettingsModal';
@@ -44,6 +45,9 @@ const App: React.FC = () => {
 
   // Screen Wake Lock
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  // Audio Keep Alive (prevents Android throttling)
+  useAudioKeepAlive(isPlaying);
 
   const activeIframeId = isAttached ? 'sc-widget-iframe-attached' : 'sc-widget-iframe-fixed';
 
@@ -194,7 +198,7 @@ const App: React.FC = () => {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(`Error attempting to enable fullscreen mode: ${err.message} (${err.name})`);
     }
   }, []);
@@ -204,7 +208,7 @@ const App: React.FC = () => {
       if (document.exitFullscreen && document.fullscreenElement) {
         await document.exitFullscreen();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(`Error attempting to exit fullscreen mode: ${err.message} (${err.name})`);
     }
   }, []);
